@@ -12,30 +12,67 @@
 #define T_MIN -10.0f
 #define T_MAX 10.0f
 
+const int SPI_CS_PIN = 10;
+const int INT_PIN = 2;
+
+const int motor_1_id = 1;
+const int motor_2_id = 2;
+
+const bool motor_1_open = true;
+const bool motor_2_open = false;
+
 struct can_frame canMsg;
+struct can_frame turnOff;
 
-MCP2515 mcp2515(10);
-
+MCP2515 mcp2515(SPI_CS_PIN);
 
 void setup() {
+  pinMode(INT_PIN, INPUT);
+
+  // @todo Maybe try send turnOff msg?
+  //       Not sure where should I put this
+  //       Try put it in different locations
+//  turnOff.can_id  = motor_1_id;
+//  turnOff.can_dlc = 8;
+//  turnOff.data[0] = 0xFF;
+//  turnOff.data[1] = 0xFF;
+//  turnOff.data[2] = 0xFF;
+//  turnOff.data[3] = 0xFF;
+//  turnOff.data[4] = 0xFF;
+//  turnOff.data[5] = 0xFF;
+//  turnOff.data[6] = 0xFF;
+//  turnOff.data[7] = 0xFD;
+//  mcp2515.sendMessage(&turnOff);
+
   while (!Serial);
+  // @todo Try different baud rate here
+  //       115200 or 921600
   Serial.begin(115200);
+//  Serial.begin(921600);
 
   mcp2515.reset();
-  mcp2515.setBitrate(CAN_1000KBPS);
+  // @todo Try different CAN Rate and clock rate here
+  //       CAN_1000KBPS or CAN_500KBPS
+  //       MCP_20MHZ or MCP_16MHZ or MCP_8MHZ
+  // @todo Try modify "setBitrate" function in mcp2515.cpp line 203
+  //       change to MCP_20MHZ or MCP_16MHZ or MCP_8MHZ
+  //       mcp2515.cpp should at "Documents/Arduino/libraries/arduino-mcp2515"
+  mcp2515.setBitrate(CAN_1000KBPS, MCP_8MHZ);
   mcp2515.setNormalMode();
-  enterMotorMode(1);
-  enterMotorMode(2);
-  delay(5000);
+
+  if (motor_1_open) {
+    enterMotorMode(motor_1_id);
+  }
+
+  if (motor_2_open) {
+    enterMotorMode(motor_2_id);
+  }
+
+  delay(2000);
 }
 
 void loop() {
-  sendToMotor(1, 0, -6.28, 0, 5, 0);
-  sendToMotor(2, 0, 6.28, 0, 5, 0);
-  delay(3000);
-  sendToMotor(1, 0, 6.28, 0, 3, 0);
-  sendToMotor(2, 0, 6.28, 0, 3, 0);
-  delay(1200);
+
 }
 
 void enterMotorMode(int mot_id) {
