@@ -1,51 +1,46 @@
 #include <SPI.h>
+#include <JY901.h>
+#include <Wire.h>
 #include <mcp2515.h>
 
-#define P_MIN -12.5f
-#define P_MAX 12.5f
-#define V_MIN -50.0f
-#define V_MAX 50.0f
-#define KP_MIN 0.0f
-#define KP_MAX 500.0f
-#define KD_MIN 0.0f
-#define KD_MAX 5.0f
-#define T_MIN -10.0f
-#define T_MAX 10.0f
+// Constants
+#define FORCE_SENSOR_PIN A0
+#define SPI_CS_PIN 10
+#define INT_PIN 2
 
-const int SPI_CS_PIN = 10;
-const int INT_PIN = 2;
+#define CALF_MOTOR_ID 1
+#define THIGH_MOTOR_ID 2
 
-const int motor_1_id = 1;
-const int motor_2_id = 2;
+#define DEFAULT_CALF_POS 0
+#define DEFAULT_THIGH_POS 0
 
-const bool motor_1_open = true;
-const bool motor_2_open = true;
+const float sample_rate = 200;
+const float delta_t = 5;
 
+// Global variables
 struct can_frame canMsg;
-struct can_frame turnOff;
+bool contact = false;
+int count = 0;
 
 MCP2515 mcp2515(SPI_CS_PIN);
 
 void setup() {
   pinMode(INT_PIN, INPUT);
   while (!Serial);
-  Serial.begin(115200);
-  //  Serial.begin(921600);
-
-  mcp2515.reset();
-  mcp2515.setBitrate(CAN_1000KBPS, MCP_8MHZ);
-  mcp2515.setNormalMode();
-
-  enterMotorMode(motor_1_id);
-  enterMotorMode(motor_2_id);
-
-  delay(1000);
+  Serial.begin(921600);
+  enterMotorMode(CALF_MOTOR_ID);
+  enterMotorMode(THIGH_MOTOR_ID);
+  delay(500);
 }
 
 void loop() {
-  sendToMotor(motor_2_id, 30 * 3.14 / 180, 0, 10, 1, 0);
-  sendToMotor(motor_1_id, 30 * 3.14 / 180, 0, 3, 1, 0);
-  delay(5);
+  if (count < 500) {
+    sendToMotor(CALF_MOTOR_ID, 0, 0, 0, 0, -4);
+    count = count + 1;
+  } else {
+    sendToMotor(CALF_MOTOR_ID, 0, 0, 0, 0, 0);
+  }
+  delay(1000 / sample_rate);
 }
 
 void enterMotorMode(int mot_id) {
@@ -63,10 +58,8 @@ void enterMotorMode(int mot_id) {
   mcp2515.sendMessage(&cf);
 }
 
-
 void sendToMotor(int mot_id, float pos, float vel, float kp, float kd, float torq) {
   struct can_frame cf;
-
   unsigned int con_pos = float_to_uint(constrain(pos, P_MIN, P_MAX), P_MIN, P_MAX, 16);
   unsigned int con_vel = float_to_uint(constrain(vel, V_MIN, V_MAX), V_MIN, V_MAX, 12);
   unsigned int con_kp = float_to_uint(constrain(kp, KP_MIN, KP_MAX), KP_MIN, KP_MAX, 12);
@@ -85,9 +78,6 @@ void sendToMotor(int mot_id, float pos, float vel, float kp, float kd, float tor
   mcp2515.sendMessage(&cf);
 }
 
-
-//Function by Ben Katz:
-//https://os.mbed.com/users/benkatz/code/CanMasterTest//file/d24fd64d1fcb/math_ops.cpp/
 int float_to_uint(float x, float x_min, float x_max, int bits) {
   // Converts a float to an unsigned int, given range and number of bits
   float span = x_max - x_min;
