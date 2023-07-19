@@ -1,7 +1,5 @@
 # T-Motor Controller Scripts for Position Control - Spring Impact Study
 
-![Teensy and T-Motor](teensy_t_motor.jpg)
-
 ## Table of Contents
 
 1. [Introduction](#introduction)
