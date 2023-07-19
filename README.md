@@ -52,7 +52,7 @@ To set up the project environment, follow these steps:
 3. Obtain the T-Motor Control Library: Get the specific library required to control your T-Motor model from the T-Motor official website or GitHub repository.
 
 4. Clone this repository: Clone this project repository to your local machine using the following command:
-  - https://github.com/zixinz990/tmotor_control.git 
+        - https://github.com/zixinz990/tmotor_control.git 
 5. Upload the Scripts: Open the Arduino IDE, load the main controller script, and upload it to your Teensy board.
 
 ## 6. Usage
